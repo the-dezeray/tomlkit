@@ -258,4 +258,5 @@ mostly slow parser loops rather than silent survivors.
 | `survivors_v1_v2.csv` | Survivors joined to Week 7 categories |
 | `survivor_candidates.csv` | Survivors grouped by function |
 | `survivor_rootcause_v2.md` | Detailed root-cause notes |
-| `scripts/` | Summary, comparison and chart scripts |
+| `../Week11_TrackD_Findings.xlsx` | Excel dashboard with native charts |
+| `scripts/` | Summary, comparison, chart and workbook scripts |
