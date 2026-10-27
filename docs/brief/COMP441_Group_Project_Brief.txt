@@ -1,0 +1,586 @@
+--- Page 1 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 1 of 13 
+ 
+COMP 441 
+Software Analysis and Testing 
+Group Project Brief — “AI-Augmented Test Suite” 
+Field Detail 
+Assessment Component Group Project: “AI-Augmented Test Suite” 
+Weight 20% of total module mark 
+Group Size 4–5 students per group (coordinator-assigned or self-selected, 
+subject to approval) 
+Issued Week 5: Tuesday, 15 September 2026 
+Milestone Checkpoints End of Weeks 6, 7, 8, 9, 10 and 11 (see Section 6) 
+Final Report & Suite Due Week 12: Tuesday, 10 November 2026, 23:59 
+Presentations & CI/CD Demo Week 13: Tuesday, 17 November 2026 (in lab) 
+Submission Method Blackboard (report + declaration) and GitHub/GitLab repository link 
+Module Coordinator Dr. Kabo Nkabiti: nkabitik@biust.ac.bw, ICT Prefab Block, Office 7 
+  
+
+
+--- Page 2 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 2 of 13 
+1. Overview and Purpose 
+This project is the capstone practical activity for Part B of COMP 441 (Automation and AI -Augmented 
+Testing). Working in assigned groups, students will take a real, mid -sized open -source codebase and 
+build a hybrid test suite  combining AI -generated tests with manually authored tests, across unit, 
+integration, and acceptance levels while rigorously measuring how effective that suite is using mutation 
+testing, coverage analysis, and (depending on the group's track) visual, accessibility, security, or defect -
+prediction techniques. 
+The project directly operationalizes the module's central theme: AI -generated tests are a useful first 
+draft, not ground truth. Every group must produce hard evidence in the form of mutation scores  that 
+show where AI-only testing falls short and must close those gaps with human -authored tests. The final 
+deliverable is a working, hybrid, human + AI test suite planned with proper risk analysis and traceability, 
+partly built test-first, and exercised at multiple test levels , wired into a CI/CD pipeline with an enforced 
+quality gate, accompanied by a written report that critically evaluates AI reliability and limitations. 
+This brief expands the sample project outline in Section 4.3 of the Module Guide into a full practical 
+specification, including differentiated tracks for different groups, a phased timeline aligned to the weekly 
+syllabus, detailed task requirements, and a marking rubric. It has been deliberately designed so that, 
+together with the module's quizzes and final examination, it gives direct, gradable evidence against every 
+Module Learning Outcome in Section 3 of the Module Guide; see the coverage map in Section 1.1. 
+1.1 Module Learning Outcomes Addressed — Coverage Map 
+The table below maps each of the twelve Module Learning Outcomes (MLOs) from Section 3 of the 
+Module Guide onto the specific part of this project that provides evidence for it. Outcomes marked 
+“Primary” are assessed mainly through this project; those marke d “Reinforced” are introduced in 
+lectures/quizzes and then practiced here; MLO 9 remains primarily the responsibility of the separate 
+individual assignment for most tracks, as noted. 
+MLO (abbreviated) Where Addressed in This Project Status 
+Static, dynamic & symbolic 
+analysis 
+Section 7.3 (static analysis + required symbolic-
+execution discussion); Section 7.4 (dynamic/mutation 
+testing) 
+Primary 
+Test strategies across unit, 
+integration, system & 
+acceptance levels 
+Section 7.5 (unit), Section 7.6 (integration & 
+acceptance/BDD) 
+Primary 
+Risk analysis, test planning, 
+estimation, traceability 
+Section 7.1 (test plan, risk register, estimation) and 
+Section 7.2 (traceability matrix) 
+Primary 
+AI-assisted generation, 
+prioritization, defect prediction 
+Section 7.4 (AI generation + AI-guided prioritization), 
+Track C stream (defect prediction) 
+Primary 
+Critically assess AI vs. human-
+designed tests 
+Section 7.4–7.5 mutation-score evidence; Final Report 
+reflection section 
+Primary 
+CI/CD pipeline with quality 
+gates 
+Section 7.10 Primary 
+
+--- Page 3 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 3 of 13 
+MLO (abbreviated) Where Addressed in This Project Status 
+Performance, security, usability, 
+accessibility testing 
+Section 7.8 (light-touch, all groups) + Section 3 track-
+specific deep dive (one of these per track) 
+Primary 
+Exploratory/ad-hoc testing Section 7.7 Primary 
+Testing AI/ML-based systems Mandatory for Track E only in this project; all other 
+tracks meet this MLO chiefly via the individual “Test 
+an AI-Powered Feature” assignment (Module Guide 
+§4.2) 
+Reinforced 
+(project) / 
+Primary 
+(individual 
+assignment) 
+Quality metrics, dashboards, 
+traceability 
+Section 7.2 (RTM) and Section 7.9 (metrics dashboard) Primary 
+Agile/DevOps, TDD and BDD Section 7.6 (TDD log and Gherkin/BDD acceptance 
+scenarios) 
+Primary 
+Plan, execute, and review a QA 
+project; teamwork 
+Section 2 (roles), Section 6 (milestones), Section 8 
+(rubric), peer-contribution form 
+Primary 
+2. Group Formation and Roles 
+Groups of 4 –5 students will be formed in the Week 5 lab session, either by self -selection (subject to 
+coordinator sign-off to balance group sizes) or by coordinator allocation where numbers require it. Each 
+group must nominate students to the following rot ating-but-accountable roles. In smaller groups of 4, 
+the Documentation Lead role may be combined with the Test Lead role. 
+Role Primary Responsibilities 
+Test Lead / Coordinator Owns the overall test strategy, delegates tasks, tracks milestone 
+deadlines, and chairs weekly stand-ups. 
+Automation & CI/CD Engineer Sets up the automation framework, Page Object Model structure, 
+and the CI/CD pipeline with quality gates (Weeks 5 and 13). 
+AI Test Engineer Owns prompt design for AI-generated tests, tool comparison, and 
+coverage/mutation benchmarking of AI output (Weeks 6–7). 
+Quality & Specialist Track Officer Owns the track-specific specialized testing stream: 
+visual/accessibility, security, defect prediction, or LLM evaluation 
+depending on the group's assigned track (Weeks 8, 10, 12). 
+Documentation & Report Lead Maintains the shared project log, consolidates weekly artefacts, and 
+drafts the final report and slide deck. 
+All members are expected to contribute to hands -on testing and code review regardless of role; roles 
+define accountability, not an exclusive division of labor. A confidential peer -contribution form is 
+submitted alongside the final report (see Section 9) and factors into the individual mark adjustment 
+described in Section 8. 
+
+--- Page 4 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 4 of 13 
+3. Track Assignment — Different Scenarios for Different Groups 
+To keep benchmarking meaningful and prevent groups from converging on identical answers, each group 
+is assigned (or selects, first -come-first-served, at coordinator discretion) one of five scenario tracks. 
+Every track follows the same phased process and rubric (Sections 6–8), but the domain, risk profile, and 
+the specialized testing stream in Week 8/12 differ, as shown below. Where the cohort is large, multiple 
+groups may share a track but must select different repositories. 
+Track A — E-Commerce / Retail Web Application 
+Domain focus: shopping cart, checkout, pricing, and inventory logic. Typical stack: JavaScript/TypeScript 
+(Node.js/Express or React front end). 
+• Specialized stream (Week 8): visual regression testing of the storefront UI and an axe -core 
+accessibility audit of the checkout flow — these are mandatory deliverables for this track. 
+• Suggested candidate repositories (verify size/license before selecting): a headless commerce engine 
+such as Medusa, an open -source storefront template, or a “ Real-world” reference e -commerce 
+implementation. 
+• Distinctive risk to probe: boundary values on pricing, discounts, and stock quantities; state-transition 
+testing of an order's lifecycle (cart → checkout → paid → shipped). 
+Track B — FinTech / Banking Transaction Engine 
+Domain focus: account balances, transfers, interest calculation, and transaction validation. Typical stack: 
+Java or Python. 
+• Specialized stream (Week 12): a security-first SAST pass with Semgrep/CodeQL and OWASP-Top-10-
+informed threat modelling of the transaction endpoints — mandatory for this track. 
+• Suggested candidate repositories: an open -source ledger, double -entry bookkeeping library, or a 
+teaching banking-simulation project. 
+• Distinctive risk to probe: rounding and currency-precision boundary values, decision-table coverage 
+of overdraft/interest rules, and mutation testing rigor on arithmetic operators (a classic weak spot 
+for AI-generated tests). 
+Track C — Healthcare / Patient-Records Data Validation System 
+Domain focus: patient intake forms, appointment scheduling, and data -validation rules. Typical stack: 
+Python (Django/Flask) or Java. 
+• Specialized stream (Week 10): a defect-prediction classifier (scikit-learn) trained on the repository's 
+commit/churn history, plus a short discussion of bias risk in flagging “risky” modules or contributors 
+— mandatory for this track. 
+• Suggested candidate repositories: an open -source clinic/appointment management system or a 
+health-data validation/FHIR-adjacent utility library. 
+• Distinctive risk to probe: equivalence partitioning and boundary value analysis on patient data fields 
+(dates of birth, dosages, identifiers); data -privacy-aware test data generation (no real PII in test 
+fixtures). 
+Track D — Developer Tooling / API or CLI Library 
+
+--- Page 5 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 5 of 13 
+Domain focus: a general-purpose library, SDK, or command -line tool with a public API contract. Typical 
+stack: Python, Go, or JavaScript/TypeScript. 
+• Specialized stream (Week 6–7, deepened): property-based testing with Hypothesis (Python) or fast-
+check (JS) to complement example-based AI-generated tests — mandatory for this track, in addition 
+to the standard mutation-testing stream. 
+• Suggested candidate repositories: a parsing/validation library, a data -transformation utility, or a 
+small CLI tool with an existing but incomplete test suite. 
+• Distinctive risk to probe: input-space edge cases (empty, null, malformed, very large inputs) and API-
+contract regression across versions. 
+Track E — AI/LLM-Integrated Application (Advanced Track) 
+Domain focus: an application with at least one prompt -based or model -driven feature (e.g. a chatbot, 
+summarizer, or recommendation feature). Typical stack: Python or JavaScript/TypeScript with an LLM 
+API integration. 
+• Specialized stream (Weeks 10–11, deepened): in addition to the standard mutation -testing stream 
+on the deterministic parts of the codebase, this track builds a lightweight evaluation harness 
+(promptfoo or DeepEval) with a small golden dataset to check the AI feature itself for hallucination 
+and prompt regressions — mandatory for this track. 
+• Suggested candidate repositories: an open -source chatbot scaffold, a retrieval -augmented-
+generation demo app, or a small content-generation tool. 
+• Note: this track carries a higher degree of technical difficulty and is recommended for groups who 
+are comfortable with Week 11 content early; it does not replace the individual “Test an AI-Powered 
+Feature” assignment (Section 4.2 of the Module Guide), whi ch remains a separate, individually 
+graded piece of work. 
+• Coordinator note: track allocation should aim for at least one group per track where the cohort size 
+allows, to maximize variety for the Week 13 cross-group showcase and peer learning discussion. 
+4. Repository Selection Criteria 
+Each group selects one repository for their assigned track, subject to written coordinator approval by 
+the end of Week 5. A short (half -page) selection justification is submitted as part of the Project Charter 
+(Section 6, Week 5 milestone). 
+4.1 Mandatory Criteria 
+• Mid-sized: roughly 3,000 –30,000 lines of source code (excluding generated code, vendored 
+dependencies, and existing tests). Too small trivialises mutation testing; too large is unmanageable 
+in the time available. 
+• Builds and runs locally without a paid licence or proprietary infrastructure. 
+• Written in a language with mature free/open -source tooling from Section 10 of the Module Guide 
+(JavaScript/TypeScript, Python, or Java are strongly preferred). 
+• Carries a permissive open-source licence (MIT, Apache-2.0, BSD) that allows academic use, forking, 
+and modification. 
+
+--- Page 6 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 6 of 13 
+• Hosted on GitHub or GitLab with visible commit history (needed for Week 10 defect -prediction 
+features and Week 7 mutation-testing baselines). 
+4.2 Preferred, Not Mandatory 
+• An existing (even if thin) test suite, so the group can measure an honest “before AI” baseline. 
+• Active maintenance history (commits within the last 2 years) for realistic churn/complexity signals. 
+• A reasonably self -contained module or sub -package the group can scope down to, if the full 
+repository is too large. 
+Two or more groups may not select the same repository within the same track; the coordinator will 
+resolve conflicts on a first-approved basis. 
+5. Project Workflow briefly 
+1. Select track and repository; set up toolchain; agree roles; draft the test plan and risk register (Week 
+5). 
+2. Establish a manual/baseline understanding of the codebase, run static analysis, and build a 
+requirements traceability matrix (Weeks 5–6, reusing Week 1–2 and Week 4 techniques). 
+3. Generate an AI baseline test suite and measure its coverage (Week 6). 
+4. Run mutation testing on the AI baseline suite and apply AI -guided test prioritisation to expose and 
+rank surviving mutants (Week 7). 
+5. Author manual unit tests — and, for Track D, property -based tests — to kill the surviving mutants 
+and close coverage gaps (Weeks 7–9). 
+6. Complete the track -specific specialized testing stream and the cross -track light -touch 
+performance/usability checks (Weeks 8, 10 or 12, depending on track). 
+7. Write a small number of new/refactored features test -first (TDD) and translate at least three user -
+facing behaviours into Gherkin/BDD acceptance scenarios, backed by an integration-level test suite 
+(Weeks 8–9). 
+8. Run exploratory testing with an AI co-pilot to catch what scripted tests miss (Week 9). 
+9. Re-run mutation testing on the final hybrid suite and record the improvement (Week 11). 
+10. Wire the full hybrid suite into a CI/CD pipeline with an enforced quality gate; finalize the written 
+report (Weeks 12–12). 
+11. Present findings to the class and demonstrate the live pipeline (Week 12). 
+6. Phased Timeline and Milestone Deliverables 
+The table below maps each project phase onto the exact weeks of the module calendar (Section 5 of the 
+Module Guide). Milestone artefacts are submitted to a shared group folder on Google Drive/Blackboard 
+at the end of each listed week for formative feedback ; they are not separately graded but non -
+submission is followed up by the Test Lead's weekly stand-up notes and may affect the teamwork mark 
+(Section 8). 
+
+--- Page 7 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 7 of 13 
+Week Syllabus Topic Project Milestone Deliverable 
+Week 5 (15 Sep) Test Automation Frameworks Project Charter: team roles, track & repository 
+selection with justification, one-page test plan, risk 
+register (top 5 risks with 
+probability/impact/mitigation), estimation using 
+one named technique, and toolchain proof-of-
+setup. 
+Week 6 (22 Sep) AI-Generated Test Cases Baseline AI Test Report (AI tool(s), prompts, 
+coverage before manual tests) + Requirements 
+Traceability Matrix (≥10 requirements mapped to 
+planned test cases). 
+Mid-Semester 
+Break (29 Sep) 
+— No milestone — recommended time to catch up on 
+reading the codebase. 
+Week 7 (06 Oct) Mutation Testing & AI-Guided 
+Prioritisation 
+Mutation Testing Report v1: mutation score of the 
+AI-only suite, surviving mutants with root-cause 
+analysis, and an AI-guided/ML- or risk-based test-
+execution priority order with justification. 
+Week 8 (13 Oct) Visual, Usability & Accessibility 
+Testing 
+Specialised Stream Checkpoint (Track A 
+mandatory) + TDD Log started (first test-first 
+feature) + first Gherkin/BDD acceptance scenario 
+drafted. 
+Week 9 (20 Oct) Exploratory & Ad-Hoc Testing 
+with AI Co-Pilots 
+Exploratory Session Report + Hybrid Suite v1 
+(manual unit tests killing surviving mutants) + 
+Integration/Acceptance Test Suite implementing 
+the BDD scenarios + light-touch 
+performance/usability checks. 
+Week 10 (27 
+Oct) 
+Quality Metrics & Defect 
+Prediction 
+Specialised Stream Checkpoint (Track C 
+mandatory) + quality-metrics dashboard snapshot 
+(defect density, coverage, mutation-score trend) 
+for all tracks. 
+Week 11 (03 
+Nov) 
+Testing AI/ML-Based Systems Mutation Testing Report v2 (final hybrid suite) + 
+Specialised Stream Checkpoint (Track E mandatory) 
++ completed TDD log (≥3 test-first features). 
+Week 12 (10 
+Nov) 
+Security Analysis & AI-Assisted 
+Vulnerability Detection 
+FINAL SUBMISSION DEADLINE: full report, hybrid 
+test suite (unit + integration + acceptance), 
+traceability matrix, CI/CD configuration, and 
+declaration form (Track B security checkpoint also 
+mandatory by this week). 
+Week 12 (17 
+Nov) 
+CI/CD Integration & Module 
+Review 
+Live CI/CD pipeline demonstration and 10-minute 
+group presentation with Q&A. 
+7. Detailed Task Requirements 
+
+--- Page 8 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 8 of 13 
+7.1 Test Plan, Risk Register and Estimation (Week 5) 
+Before any tooling work begins, produce a short planning package as part of the Project Charter. This 
+closes the module's test-planning and risk-analysis outcome, which the sample brief in the Module Guide 
+did not previously require. 
+• One-page test plan in IEEE-829-style structure: scope, objectives, methodology, schedule, resource 
+allocation (who does what), and entry/exit criteria for the project as a whole. 
+• Risk register: identify at least 5 project risks (technical or schedule-related, e.g. “repository too large 
+to mutation-test in the time available”), rate each by probability and impact, and state a mitigation 
+for each. 
+• Estimate the effort for the mutation -testing and hybrid -suite phases using one named estimation 
+technique from Week 4 (e.g. three -point estimation or expert judgement), and briefly justify the 
+estimate. 
+7.2 Requirements Traceability Matrix (Weeks 5–6) 
+Reusing the Week 4 traceability technique, derive a short requirements list for the module(s) under test 
+and track it through to the test suite as it grows. 
+• Identify at least 10 requirements or user -facing behaviours for the selected module(s), drawn from 
+the repository's README, issue tracker, or by reverse -engineering behaviour from the code (state 
+which source was used for each). 
+• Build a requirements traceability matrix (RTM) mapping each requirement to the test case(s) that 
+verify it, spanning unit, integration, and acceptance tests as the suite is built out across Weeks 6–12. 
+• Update and resubmit the RTM as an appendix to the final report, with any requirement that ends up 
+untested clearly flagged and explained. 
+7.3 Static Analysis Baseline, incl. Symbolic Analysis (builds on Week 2) 
+• Run a static analysis tool (e.g. , SonarQube Community Edition, ESLint/Pylint, or an LLM code 
+reviewer) across the selected repository. 
+• Report at least: cyclomatic complexity hot-spots, maintainability index, and the top 10 findings 
+triaged by severity. 
+• Briefly compare traditional linter output against an LLM -based code review of the same file, noting 
+agreements and disagreements. 
+• Symbolic-analysis discussion (required, short): pick one function with non -trivial branching and 
+reason through what a symbolic -execution tool (e.g. conceptually, or using a lightweight tool such 
+as CrossHair for Python) would explore that example -based un it tests might miss — a half -page 
+discussion is sufficient; a working symbolic-execution run is welcome but not mandatory. 
+7.4 AI-Generated Baseline Suite, Mutation Testing & AI-Guided Prioritization (Weeks 
+6, 7, 11) 
+• Use at least one free/open -source or free -tier AI coding assistant (Continue.dev + Ollama, 
+Claude/ChatGPT free tier, or GitHub Copilot free tier) to generate a unit test suite for the selected 
+module(s); document the exact prompts used (prompt-engineering log). 
+
+--- Page 9 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 9 of 13 
+• Measure statement and branch coverage of the AI -generated suite, and critically assess assertion 
+quality — flag any tests that merely assert “no exception thrown” or check outputs too loosely to be 
+meaningful. 
+• Run a mutation-testing tool appropriate to the language (PIT for Java, Stryker for JS/TS, mutmut or 
+cosmic-ray for Python) and compute the mutation score of the AI -only baseline suite (v1, Week 7) 
+and the final hybrid suite (v2, Week 11). 
+• For at least 8 surviving mutants in the v1 run, explain in plain language why the AI -generated tests 
+failed to catch them, and show the specific manual test written to kill each one. 
+• AI-guided test prioritisation (required): using either an ML classifier trained on churn/complexity 
+(scikit-learn) or a documented risk -based heuristic, produce a ranked test -execution order for the 
+hybrid suite, and justify why it would reduce time-to-detect-a-regression in CI. 
+• Present the v1 → v2 mutation-score improvement as a labelled chart in the final report. 
+7.5 Hybrid Unit Test Suite Construction (Weeks 7–9) 
+• Manually author unit tests to close the gaps identified by mutation testing and by manual code 
+reading, using the appropriate test -design techniques from Week 3 (equivalence partitioning, 
+boundary value analysis, decision tables, or state transition testing) as justification for each new test, 
+not guesswork. 
+• Track D groups additionally add property -based tests (Hypothesis/fast -check) for at least two 
+functions with a well-defined input domain. 
+• Maintain a simple traceability note linking each manually added test back to the mutant(s) or 
+coverage gap it addresses and reflect this in the RTM (Section 7.2). 
+7.6 Test-Driven Development, BDD, and Integration/Acceptance Testing (Weeks 8–9) 
+This closes the module's Agile/DevOps, TDD, and multi-level testing outcome, which was previously only 
+touched at the unit level. 
+• Test-Driven Development log: pick at least 3 small new features, bug fixes, or refactoring’s to 
+implement using a strict red –green–refactor cycle. Keep a short log (timestamped commits or a 
+table) showing the failing test written first, the minimal code that made it pass, and the refactor 
+step. 
+• Behavior-Driven Development: translate at least 3 user -facing behaviors into Gherkin syntax 
+(Given/When/Then). Automate them with a BDD framework appropriate to the language (Cucumber 
+for Java, pytest-bdd or behave for Python, jest-cucumber or Cucumber.js for JavaScript/TypeScript). 
+• Integration-level test suite: write at least 5 integration tests that exercise two or more real 
+components together (e.g. a service layer against a real or in -memory database, or two internal 
+modules interacting), distinct from the unit-level hybrid suite in Section 7.5. 
+• Where the BDD scenarios exercise the system end-to-end, they may double as the acceptance-level 
+tests required by MLO 2 — state clearly in the report which test level each BDD scenario represents. 
+7.7 Exploratory Testing with an AI Co-Pilot (Week 9) 
+• Run one time -boxed (45–60 minute) session -based exploratory testing session per group, with a 
+written charter. 
+
+--- Page 10 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 10 of 13 
+• Use an LLM as a real -time “testing co -pilot” to suggest exploratory charters, edge cases, and 
+negative-path scenarios during the session. 
+• Log all findings in a structured session report (charter, duration, areas covered, bugs/anomalies 
+found, and at least one instance where the AI co-pilot's suggestion was useful and one where it was 
+misleading or irrelevant). 
+7.8 Light-Touch Performance & Usability Checks (all groups) + Track-Specific 
+Specialised Stream 
+Every group, regardless of track, completes a brief performance check and a brief usability check so that 
+Appendix B (Performance Testing) and the usability portion of Week 8 are evidenced across the whole 
+cohort, not just Track A. This is intentionally sc oped small (roughly half a day of effort) so it does not 
+compete with the track-specific deep dive. 
+• Performance (light touch, all groups): pick one representative endpoint, function, or CLI command 
+and run a short load test with JMeter, Locust, or Gatling (e.g. 20 –50 simulated concurrent users for 
+2–5 minutes). Report response time, throughput, and error rate, and note any obvious bottleneck. 
+• Usability (light touch, all groups): perform a short heuristic evaluation of one user-facing flow against 
+Nielsen's 10 usability heuristics (or the module's usability -guidelines list from Week 8), and list the 
+top 3 issues found with severity ratings. 
+• Track-specific specialised stream (deep dive, mandatory for the group's assigned track): complete 
+the specialised activity described in Section 3 — visual regression + accessibility audit (Track A), 
+security SAST + threat modelling (Track B), defect -prediction classifier (Track C), property -based 
+testing (Track D), or LLM evaluation harness (Track E). All other tracks are welcome to attempt 
+another track's specialised stream as bonus work (up to 5 additional marks, capped at 100% overall), 
+but only after their own mandatory stream is complete. 
+7.9 Quality Metrics and Reporting (builds on Week 10) 
+• Report at least four quality indicators for the final hybrid suite: coverage percentage, mutation score, 
+defect density (defects found per KLOC during the project), and RTM completeness (% of 
+requirements with at least one passing test). 
+• Present these as a simple dashboard (a spreadsheet chart, a Grafana panel, or an equivalent visual) 
+in the final report or as a linked artefact. 
+7.10 CI/CD Integration and Quality Gate (Week 13) 
+• Wire the final hybrid suite — unit, integration, and acceptance/BDD tests — into a CI/CD pipeline 
+(GitHub Actions, GitLab CI, or Jenkins) that runs automatically on every push/pull request. 
+• Configure a quality gate that fails the build if coverage or mutation score drops below an agreed 
+threshold set by the group (state and justify the threshold chosen). 
+• Be ready to demonstrate a live, passing pipeline run — and, ideally, one deliberately broken run that 
+the gate correctly blocks — during the Week 13 presentation. 
+8. Assessment Rubric 
+
+--- Page 11 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 11 of 13 
+The project is marked out of 100 and then scaled to 20% of the total module mark, per the weighting in 
+Section 4.1 of the Module Guide. Marks are awarded at group level and then adjusted at the individual 
+level using the confidential peer -contribution form (adjustment range: ±10 marks, applied only where 
+peer feedback indicates materially unequal contribution). 
+Component Marks What Is Assessed 
+Project Charter, Test Plan & Risk 
+Register 
+5 Clarity of roles, soundtrack/repository choice, realistic 
+test plan, credible risk register, sound estimation. 
+Requirements Traceability Matrix 4 Requirements are well-derived, RTM is complete and 
+kept up to date, gaps are honestly flagged. 
+Static Analysis (incl. symbolic-
+execution discussion) 
+4 Correct use of tooling, meaningful triage, honest linter-
+vs-LLM comparison, sound symbolic-analysis reasoning. 
+AI-Generated Baseline Suite & 
+Coverage 
+8 Prompt-engineering rigor, coverage measurement 
+accuracy, critical assessment of assertion quality. 
+Mutation Testing & AI-Guided 
+Prioritization (v1 → v2) 
+12 Correct mutation-score computation, depth of root-
+cause analysis, quality of the prioritization justification, 
+clear evidence of improvement. 
+Hybrid Unit Test Suite Quality 6 Manual tests are well-designed (using named 
+techniques), traceable to specific gaps, and genuinely 
+strengthen the suite. 
+TDD/BDD Stream 7 Genuine red–green–refactor evidence, well-formed 
+Gherkin scenarios, correct automation of BDD scenarios. 
+Integration & System/Acceptance-
+Level Test Suite 
+6 Tests genuinely exercise multiple components together; 
+acceptance tests map cleanly to BDD scenarios and 
+requirements. 
+Track-Specific Specialized Stream 8 Depth and correctness of the mandatory specialized 
+testing activity for the group's track. 
+Light-Touch Performance & 
+Usability Checks 
+4 Load test correctly configured and interpreted; usability 
+evaluation is grounded in named heuristics. 
+Exploratory Testing Session 
+Report 
+4 Session is well-charted, findings are well-documented, 
+honest reflection on AI co-pilot usefulness. 
+CI/CD Pipeline & Quality Gate 8 Pipeline runs correctly across all test levels, gate is 
+meaningfully configured and justified, live demo 
+succeeds. 
+Final Written Report 12 Structure, evidence-based argument, depth of reflection 
+on AI reliability/limitations and ethics, writing quality. 
+Presentation & Q&A 7 Clarity, time management, quality of live demo, ability to 
+answer questions on design decisions. 
+Teamwork / Peer Contribution 5 Evidence of even contribution, constructive 
+collaboration, and adherence to milestone deadlines. 
+
+--- Page 12 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 12 of 13 
+Rubric total: 100 marks, mapped to every MLO in Section 1.1 above; no single MLO relies on only one 
+rubric line, so a weak week does not disproportionately sink the group's mark. 
+9. Final Report Requirements 
+Submit one PDF report per group, 7 –10 pages excluding appendices, using a standard 11pt font and 
+2.5cm margins. The extra length versus the Module Guide's original 5 –8-page sample brief reflects the 
+added planning, traceability, and multi-level testing evidence now required. The report must follow this 
+structure: 
+1. Executive Summary (half page): track, repository, headline mutation-score improvement. 
+2. Methodology: tools used at each phase, with versions. 
+3. Test Plan & Risk Register Summary: key entry/exit criteria, top risks and mitigations, estimation 
+technique used. 
+4. Requirements Traceability Matrix: full table as an appendix, with a short narrative on any gaps. 
+5. Static Analysis Findings, including the symbolic-analysis discussion (brief). 
+6. AI-Only Baseline Results: coverage, sample prompts, assertion-quality assessment. 
+7. Mutation Testing Results: v1 vs. v2 mutation scores, at least 8 annotated surviving -mutant case 
+studies, and the AI-guided prioritisation order with justification. 
+8. Hybrid Suite Design Rationale: test-design techniques applied and why. 
+9. TDD & BDD Evidence: TDD log summary and the Gherkin scenarios with a note on their automation 
+and test level. 
+10. Integration & Acceptance Testing Summary: what was exercised together and why it matters beyond 
+unit tests. 
+11. Track-Specific Specialised Stream Findings, plus the cross -track performance and usability check 
+results. 
+12. Exploratory Testing Findings. 
+13. CI/CD Pipeline Summary and quality-gate justification. 
+14. Reflection: strengths, risks, and limitations of AI -generated tests observed in this project, and any 
+ethical or reliability concerns (bias, hallucinated assertions, over-reliance). 
+15. Appendices: full prompt log, RTM, raw coverage/mutation reports, TDD log, Gherkin feature files, 
+peer-contribution form (submitted separately/confidentially where the platform allows). 
+A one-page Declaration of AI Tool Use must be attached (see Section 10), consistent with Section 7.7 of 
+the Module Guide. 
+10. Submission Instructions 
+• Code and CI/CD configuration: push to a group fork/repository on GitHub or GitLab; submit the 
+repository link via Blackboard. 
+
+--- Page 13 ---
+ 
+COMP 441 — Group Project Brief: AI-Augmented Test Suite 
+Page 13 of 13 
+• Final report: PDF, uploaded to the Blackboard assignment link for “Group Project — AI-Augmented 
+Test Suite”, by 23:59 on Tuesday, 10 November 2026 (end of Week 12). 
+• Declaration of AI Tool Use: one page, listing every AI tool used, for which activities, and confirming 
+that all analysis and reflection is the group's own critical work, signed by all members. 
+• Peer-contribution form: submitted individually and confidentially via the separate Blackboard peer-
+assessment link, due at the same deadline. 
+• Late submissions are subject to the faculty’s standard late -penalty policy; extensions must be 
+requested in advance through the Faculty Manager per Section 7.1 of the Module Guide. 
+11. Academic Integrity and Use of AI Tools 
+AI assistance is not just permitted but required for this project ; it is the point of the exercise. However, 
+per Section 7.7 of the Module Guide, all analysis write-ups, root-cause explanations of surviving mutants, 
+and critical reflections must be the group's own work. AI-generated tests, findings, and code must always 
+be reviewed and verified by the group before submission  and never submitted as ground truth. Any AI 
+tool use must be transparently disclosed in the Declaration of AI Tool Use. Submitting unreviewed AI 
+output as though it were verified, human-checked work is treated as a breach of the module's academic 
+integrity policy. 
+12. Support and Resources 
+• Weekly lab sessions (Weeks 5 –13) are structured to build the skills needed for each milestone — 
+attendance is strongly recommended even beyond the DP requirement. 
+• The recommended free/open -source tool list in Section 10 of the Module Guide covers every tool 
+referenced in this brief. 
+• The module coordinator and teaching assistant are available for track/repository sign -off and 
+technical blockers via email or the scheduled office hours; see Section 2 of the Module Guide. 
+• Formative feedback on each weekly milestone (Section 6) is intended to catch problems early; 
+groups that skip milestone check-ins take on significant risk ahead of the Week 12 deadline. 
+Good luck — and remember to treat every AI suggestion as a draft to be verified, not a verdict to be 
+trusted. 

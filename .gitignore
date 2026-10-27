@@ -22,6 +22,9 @@ pip-log.txt
 .python-version
 .vscode/*
 
+# Office lock files
+~$*
+
 /test.py
 /test_*.*
 
