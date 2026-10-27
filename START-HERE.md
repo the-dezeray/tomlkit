@@ -8,9 +8,9 @@
 
 - **Weekly evidence PDFs:** [`reports/pdf/README.md`](reports/pdf/README.md)
 - **Combined PDF (all weeks):** [`reports/pdf/COMP441_GroupA_Weekly_Evidence.pdf`](reports/pdf/COMP441_GroupA_Weekly_Evidence.pdf)
-- **Final report:** [`COMP 441 Group A - Final Report.docx`](COMP%20441%20Group%20A%20-%20Final%20Report.docx)
-- **Presentation notes:** [`presentation.md`](presentation.md)
-- **Chart guide:** [`COMP 441 Group A - Chart Guide.md`](COMP%20441%20Group%20A%20-%20Chart%20Guide.md)
+- **Final report (Blackboard submission):** `COMP 441 Group A - Final Report.docx` — local file; upload the PDF to Blackboard
+- **Presentation notes:** `presentation.md` — local file
+- **Chart guide:** `COMP 441 Group A - Chart Guide.md` — local file
 
 ## Key evidence
 
