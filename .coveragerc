@@ -1,2 +1,9 @@
 [run]
-omit = tomlkit/_compat.py,
+branch = True
+omit =
+    tomlkit/_compat.py
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = True

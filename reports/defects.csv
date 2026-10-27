@@ -1,0 +1,9 @@
+id,summary,status,severity,found_by,linked_test,commit
+D1,date() accepted datetime strings,fixed,medium,AI baseline,tests_ai/test_ai_api.py::TestDateTimeFactories::test_date_rejects_datetime,a4f54db
+D2,Bool.__eq__ returns NotImplemented for another Bool,open,low,AI baseline,tests_ai/test_ai_items.py::TestPickle,
+D3,Inline-table duplicate raises KeyAlreadyPresent instead of ParseError,open,medium,AI baseline,tests_ai/test_ai_parser.py::TestInlineTables::test_duplicate_key_in_inline,
+D5,key([]) serialises to an unparseable key,open,low,AI baseline,tests_ai/test_ai_api.py::TestKeyFactory,
+D6,comment() writes unparseable TOML for a bare CR,fixed,medium,Manual mutation follow-up,tests_manual/test_kill_v1.py::test_k8_add_line_comment_rejects_any_line_break,c829a38
+D7,Bare CR in multiline strings,fixed,medium,Property-based test,tests_property/test_properties.py::test_d7_multiline_string_with_bare_cr,a38a3d8
+D8,Insertion at position 0 drops the space after the inserted element,open,medium,Exploratory session,tests_manual/test_kill_v1.py::test_k6_insert_at_index_zero,
+M1,_CustomDict.__or__ drops existing keys because copy() returns {},open,medium,Mutation testing,tests/test_types.py::test_custom_dict_or_keeps_existing_keys,

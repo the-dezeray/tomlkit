@@ -2,14 +2,14 @@
 [pypi_version]: https://img.shields.io/pypi/v/tomlkit.svg?logo=python&logoColor=white
 [python_versions]: https://img.shields.io/pypi/pyversions/tomlkit.svg?logo=python&logoColor=white
 [github_license]: https://img.shields.io/github/license/sdispater/tomlkit.svg?logo=github&logoColor=white
-[github_action]: https://github.com/sdispater/tomlkit/actions/workflows/tests.yml/badge.svg
+[github_action]: https://github.com/the-dezeray/tomlkit/actions/workflows/ci.yml/badge.svg
 
 [![GitHub Release][github_release]](https://github.com/sdispater/tomlkit/releases/)
 [![PyPI Version][pypi_version]](https://pypi.org/project/tomlkit/)
 [![Python Versions][python_versions]](https://pypi.org/project/tomlkit/)
 [![License][github_license]](https://github.com/sdispater/tomlkit/blob/master/LICENSE)
 <br>
-[![Tests][github_action]](https://github.com/sdispater/tomlkit/actions/workflows/tests.yml)
+[![Tests][github_action]](https://github.com/the-dezeray/tomlkit/actions/workflows/ci.yml)
 
 # TOML Kit - Style-preserving TOML library for Python
 
@@ -68,3 +68,20 @@ You can then run the tests with
 ```bash
 poetry run pytest -q tests
 ```
+
+## COMP 441 CI
+
+The project uses the `COMP 441 CI` workflow in `.github/workflows/ci.yml`.
+It runs the unit, AI, manual, integration, BDD, property and TDD suites, then
+publishes downloadable coverage HTML/XML/JSON, JUnit XML, RTM validation,
+mutation results, a Week 7 risk-order report and a `dashboard.md` artifact.
+
+```bash
+# local reproduction
+git submodule update --init --recursive
+poetry install
+poetry run python -m pytest -q -p ci.priority_plugin
+```
+
+See `docs/ci-cd.md` for the job map and quality gates and
+`docs/ci-cd-demo.md` for the 10-minute live demonstration script.

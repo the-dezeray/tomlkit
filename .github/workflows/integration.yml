@@ -1,21 +1,25 @@
-name: Integration Tests
+name: Upstream compatibility
 
 on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - "**"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+
+permissions:
+  contents: read
 
 concurrency:
-  group: integration-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: upstream-compat-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   integration:
-    name: Integration / ${{ matrix.os }} / ${{ matrix.python-version }} / ${{ matrix.project }}
+    name: Upstream / ${{ matrix.os }} / ${{ matrix.python-version }} / ${{ matrix.project }}
     runs-on: ${{ matrix.image }}
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [ Ubuntu, macOS, Windows ]
@@ -48,7 +52,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Bootstrap poetry
-        run: pipx install poetry
+        run: pipx install poetry==2.5.1
 
       - name: Configure poetry
         run: |

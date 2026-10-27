@@ -4,47 +4,132 @@ on:
   push:
     tags:
       - "*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (for example 0.15.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
-  Release:
+  verify:
+    name: Verify before release
     runs-on: ubuntu-latest
-
+    timeout-minutes: 25
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.tag || github.ref }}
           submodules: "recursive"
-
-      - name: Get tag
-        id: tag
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.x
+          python-version: "3.12"
 
-      - name: Install and set up Poetry
-        run: pipx install poetry
+      - name: Install Poetry
+        run: pipx install poetry==2.5.1
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Run full hybrid suite
+        shell: bash
+        run: |
+          poetry run python -m pytest -q \
+            tests tests_ai tests_manual tests_integration tests_bdd \
+            tests_property tests_tdd
+
+  build:
+    name: Build distribution
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry==2.5.1
 
       - name: Build project for distribution
+        shell: bash
         run: poetry build
 
-      - name: Check Version
-        id: check-version
+      - name: Check distribution metadata
+        shell: bash
         run: |
-          [[ "$(poetry version --short)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
-            || echo ::set-output name=prerelease::true
-      - name: Create Release
+          python -m pip install --quiet twine
+          twine check dist/*
+
+      - name: Check version
+        id: check-version
+        shell: bash
+        run: |
+          version="$(poetry version --short)"
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+      - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
+          tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           artifacts: "dist/*"
           draft: false
           allowUpdates: true
           generateReleaseNotes: true
-          prerelease: steps.check-version.outputs.prerelease == 'true'
+          prerelease: ${{ steps.check-version.outputs.prerelease == 'true' }}
+
+  publish:
+    name: Publish to PyPI (upstream only)
+    needs: build
+    if: github.repository == 'python-poetry/tomlkit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/tomlkit
+    steps:
+      - name: Download distribution artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
       - name: Publish to PyPI
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist

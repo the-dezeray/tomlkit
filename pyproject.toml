@@ -24,16 +24,25 @@ include = [
 ]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
+pytest = "^7.4.4"
+# pytest-bdd 9 parses Gherkin docstrings correctly; it requires Python >=3.10.
+# The Python 3.9 unit-compatibility job only runs tests/ and does not install
+# the BDD plugin.
+pytest-bdd = { version = "^9.0.0", python = ">=3.10" }
+pytest-cov = "^4.1.0"
 PyYAML = ">=6.0.2"
 pre-commit = "^2.20.0"
 mypy = "1.19.1"
 Sphinx = "^4.3.2"
 furo = "^2022.9.29"
+# mutmut 2.5.1 is kept in the default dev group so the Python 3.9
+# compatibility job can install the project. The Week 11 hybrid mutation
+# run uses mutmut 3.8.0 in a separate Python >= 3.10 tool environment,
+# pinned in ci/mutation-requirements.txt.
 mutmut = "<3"
 hypothesis = "<6.130"
 radon = "^6.0.1"
+ruff = "^0.15.21"
 
 [tool.ruff.lint]
 extend-select = [
@@ -66,14 +75,54 @@ enable_error_code = [
     "truthy-bool",
 ]
 
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+    "tests_ai",
+    "tests_manual",
+    "tests_bdd",
+    "tests_integration",
+    "tests_property",
+    "tests_tdd",
+]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.mutmut]
-# COMP 441 Week 7: mutation testing of the AI-only baseline suite (v1)
+# Week 7 v1 (AI-only) and Week 11 v2 (final hybrid suite) both use this file.
+# mutmut 2 reads paths_to_mutate; mutmut 3 reads source_paths and warns about
+# the deprecated key. Keeping both makes the historical and final commands
+# reproducible without maintaining two copies.
+source_paths = ["tomlkit/"]
 paths_to_mutate = ["tomlkit/"]
-tests_dir = ["tests_ai/"]
-also_copy = ["tests_ai/"]
+tests_dir = [
+    "tests/",
+    "tests_ai/",
+    "tests_manual/",
+    "tests_bdd/",
+    "tests_integration/",
+    "tests_property/",
+    "tests_tdd/",
+]
+also_copy = [
+    "tests/",
+    "tests_ai/",
+    "tests_manual/",
+    "tests_bdd/",
+    "tests_integration/",
+    "tests_property/",
+    "tests_tdd/",
+]
 do_not_mutate = ["tomlkit/_compat.py", "tomlkit/_types.py"]
-pytest_add_cli_args = ["-p", "no:cacheprovider"]
+# mutmut's instrumentation adds stack frames to this deliberately deeply
+# nested parser input, so it is excluded from mutation runs only. The test
+# still runs in the normal suite.
+pytest_add_cli_args = [
+    "-p",
+    "no:cacheprovider",
+    "-k",
+    "not test_parse_rejects_deeply_nested_documents",
+]

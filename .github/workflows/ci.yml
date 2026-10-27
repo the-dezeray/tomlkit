@@ -1,0 +1,597 @@
+name: COMP 441 CI
+
+on:
+  pull_request:
+    branches:
+      - "**"
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      run_mutation:
+        description: "Run the full mutation suite (20-30 minutes)"
+        type: choice
+        options:
+          - none
+          - full
+        default: none
+      run_performance:
+        description: "Run the light-touch performance check"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comp441-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  POETRY_VERSION: "2.5.1"
+  PYTHON_VERSION: "3.12"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  quality:
+    name: Quality / lint and types
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Ruff check (CI scripts, blocking)
+        shell: bash
+        run: poetry run ruff check ci conftest.py
+
+      - name: Ruff format check (CI scripts, blocking)
+        shell: bash
+        run: poetry run ruff format --check ci conftest.py
+
+      - name: Ruff check (project baseline, evidence)
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p reports/quality
+          poetry run ruff check tomlkit tests tests_ai tests_manual tests_bdd \
+            tests_integration tests_property tests_tdd \
+            --output-format=concise 2>&1 | tee reports/quality/ruff.txt
+
+      - name: Ruff format check (project baseline, evidence)
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p reports/quality
+          poetry run ruff format --check tomlkit tests tests_ai tests_manual \
+            tests_bdd tests_integration tests_property tests_tdd \
+            2>&1 | tee reports/quality/ruff-format.txt
+
+      - name: Mypy (project baseline, evidence)
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p reports/quality
+          poetry run mypy tomlkit 2>&1 | tee reports/quality/mypy.txt
+
+      - name: Upload quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evidence
+          path: reports/quality
+          if-no-files-found: ignore
+
+  unit:
+    name: Unit / ${{ matrix.os }} / ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.9", "3.12", "3.14"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+
+      - name: Get full Python version
+        id: full-python-version
+        shell: bash
+        run: |
+          echo version=$(python -c "import sys; print('-'.join(map(str, sys.version_info)))") >> "$GITHUB_OUTPUT"
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        shell: bash
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          mkdir -p reports
+          poetry run python -m pytest -q tests --junitxml=reports/junit-unit.xml
+
+      - name: Upload unit JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-unit-${{ matrix.os }}-${{ matrix.python }}
+          path: reports/junit-unit.xml
+          if-no-files-found: ignore
+
+  ai-baseline:
+    name: AI-only baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Run AI-only baseline
+        shell: bash
+        run: |
+          mkdir -p reports
+          poetry run python -m pytest -q tests_ai \
+            --junitxml=reports/junit-ai.xml \
+            --cov=tomlkit --cov-branch \
+            --cov-report=xml:reports/coverage-ai.xml \
+            --cov-report=json:reports/coverage-ai.json \
+            --cov-report=html:reports/htmlcov-ai
+
+      - name: Upload AI baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-baseline-evidence
+          path: |
+            reports/junit-ai.xml
+            reports/coverage-ai.xml
+            reports/coverage-ai.json
+            reports/htmlcov-ai
+          if-no-files-found: ignore
+
+  hybrid:
+    name: Hybrid suite / coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Run hybrid suite in Week 7 risk order
+        shell: bash
+        run: |
+          mkdir -p reports
+          poetry run python -m pytest -q -p ci.priority_plugin \
+            tests tests_ai tests_manual tests_integration tests_bdd \
+            tests_property tests_tdd \
+            --cov=tomlkit --cov-branch \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=json:reports/coverage.json \
+            --cov-report=html:reports/htmlcov \
+            --junitxml=reports/junit.xml \
+            --durations=20
+
+      - name: Coverage gate
+        shell: bash
+        run: |
+          poetry run python ci/check_coverage.py \
+            --coverage reports/coverage.json \
+            --min-statement 87 \
+            --min-branch 82
+
+      - name: Upload hybrid evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hybrid-evidence
+          path: |
+            reports/coverage.xml
+            reports/coverage.json
+            reports/coverage_gate.json
+            reports/junit.xml
+            reports/htmlcov
+            reports/priority_order.json
+          if-no-files-found: ignore
+
+  rtm:
+    name: RTM validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Cache virtualenv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Collect test IDs
+        shell: bash
+        run: |
+          mkdir -p reports/rtm
+          poetry run python -m pytest --collect-only -q \
+            tests tests_ai tests_manual tests_integration tests_bdd \
+            tests_property tests_tdd > reports/collected_tests.txt
+
+      - name: Validate RTM
+        shell: bash
+        run: |
+          poetry run python ci/validate_rtm.py \
+            --collected reports/collected_tests.txt \
+            --out-dir reports/rtm
+
+      - name: Upload RTM evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtm-evidence
+          path: |
+            reports/rtm
+            reports/collected_tests.txt
+          if-no-files-found: ignore
+
+  mutation:
+    name: Mutation testing / final suite
+    # Full mutation is deliberately not on every PR: it takes 20-30 minutes.
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_mutation == 'full')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create mutation tool environment
+        shell: bash
+        run: |
+          python -m venv .mutation-venv
+          . .mutation-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install -r ci/mutation-requirements.txt
+
+      - name: Run mutmut
+        shell: bash
+        run: |
+          . .mutation-venv/bin/activate
+          mkdir -p reports/mutation
+          mutmut run --max-children 4
+
+      - name: Collect mutation results
+        if: always()
+        shell: bash
+        run: |
+          . .mutation-venv/bin/activate
+          mkdir -p reports/mutation
+          mutmut results --all true > reports/mutation/mutmut_results.txt
+          python ci/mutation_summary.py \
+            --results reports/mutation/mutmut_results.txt \
+            --out reports/mutation/mutation_summary.json \
+            --survivors reports/mutation/survivors.txt \
+            --scope "tomlkit/ (full hybrid suite)"
+
+      - name: Upload mutation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-evidence
+          path: |
+            reports/mutation/mutmut_results.txt
+            reports/mutation/mutation_summary.json
+            reports/mutation/survivors.txt
+          if-no-files-found: ignore
+
+  performance:
+    name: Light-touch performance
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_performance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Run performance check
+        shell: bash
+        run: |
+          mkdir -p reports
+          poetry run python docs/week9/performance_check.py | tee reports/performance.txt
+
+      - name: Upload performance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-evidence
+          path: reports/performance.txt
+          if-no-files-found: ignore
+
+  security:
+    name: Security evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Install security tools
+        shell: bash
+        run: poetry run pip install --quiet pip-audit bandit
+
+      - name: pip-audit (evidence)
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p reports/security
+          poetry run pip-audit --format=json --output=reports/security/pip-audit.json
+
+      - name: Bandit (evidence)
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p reports/security
+          poetry run bandit -q -r tomlkit -f txt -o reports/security/bandit.txt
+
+      - name: Upload security evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-evidence
+          path: reports/security
+          if-no-files-found: ignore
+
+  dashboard:
+    name: Report dashboard
+    needs: [hybrid, rtm, mutation]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Configure Poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry env use python
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Download hybrid evidence
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: hybrid-evidence
+          path: reports
+
+      - name: Download RTM evidence
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: rtm-evidence
+          path: reports
+
+      - name: Download mutation evidence
+        if: needs.mutation.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: mutation-evidence
+          path: reports/mutation
+
+      - name: Build dashboard
+        shell: bash
+        run: |
+          mkdir -p reports reports/rtm reports/mutation
+          poetry run radon raw -s -j tomlkit > reports/radon_raw.json
+          poetry run python ci/build_dashboard.py \
+            --coverage reports/coverage.json \
+            --junit reports/junit.xml \
+            --rtm reports/rtm/rtm_validation.json \
+            --coverage-gate reports/coverage_gate.json \
+            --mutation reports/mutation/mutation_summary.json \
+            --priority reports/priority_order.json \
+            --defects reports/defects.csv \
+            --sloc reports/radon_raw.json \
+            --baseline reports/week10/dashboard.csv \
+            --out reports/dashboard.md \
+            --csv reports/dashboard.csv
+          cat reports/dashboard.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dashboard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard
+          path: |
+            reports/dashboard.md
+            reports/dashboard.csv
+          if-no-files-found: ignore

@@ -37,3 +37,25 @@ benchmark.py
 mutants/
 .mutmut-cache
 .hypothesis/
+
+# CI-generated report artifacts (the committed Week 10/defect files stay tracked)
+reports/coverage.xml
+reports/coverage.json
+reports/coverage-ai.xml
+reports/coverage-ai.json
+reports/coverage_gate.json
+reports/htmlcov/
+reports/htmlcov-ai/
+reports/junit.xml
+reports/junit-ai.xml
+reports/junit-unit.xml
+reports/priority_order.json
+reports/rtm/
+reports/mutation/
+reports/quality/
+reports/security/
+reports/dashboard.md
+reports/dashboard.csv
+reports/radon_raw.json
+reports/collected_tests.txt
+reports/performance.txt

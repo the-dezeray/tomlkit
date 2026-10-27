@@ -1,0 +1,11 @@
+# Week 11 mutation v2 environment.
+#
+# mutmut 3.8.0 requires Python >= 3.10, so this tool environment is separate
+# from the Python 3.9 unit-compatibility job. Pins match the Week 11
+# evidence run (Ubuntu, Python 3.13) and make the CI result reproducible.
+mutmut==3.8.0
+pytest==9.1.1
+pytest-bdd==9.0.0
+pytest-cov==7.1.0
+hypothesis==6.170.12
+radon==6.0.1
