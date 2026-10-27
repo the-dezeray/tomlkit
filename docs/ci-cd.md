@@ -53,6 +53,9 @@ flowchart LR
 Mutation, performance, security evidence, and upstream compatibility are
 nightly or non-blocking so a long external run does not block a small PR.
 
+The editable diagram source is `docs/ci-cd-structure.drawio` (open it in
+diagrams.net or the draw.io desktop app).
+
 ## Jobs and commands
 
 | Job | Core command | Output |
