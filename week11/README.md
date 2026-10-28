@@ -48,6 +48,7 @@ week11/
   TDD_LOG.md
   full_suite.txt
   tdd_runs/                 # raw red/green/refactor pytest output
+  Week11_TrackD_Findings.xlsx   # chart dashboard
   mutation_v2/
     README.md
     mutation_v2_report.md
@@ -57,6 +58,7 @@ week11/
     v1_vs_v2.csv
     survivors_v2.txt
     scripts/summarise_v2.py
+    scripts/build_excel.py
   property/
     PROPERTY_CHECKPOINT.md
     pytest_property.txt
